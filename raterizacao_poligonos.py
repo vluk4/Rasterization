@@ -6,11 +6,11 @@ import numpy as np
 
 # Exemplos:
 # Triângulos equiláteros:
-# -0.9,-0.9; 0.9,-0.9; 0,0.9
+# -0.9, -0.25; -0.5,-0.25; -0.7, 0.25
 # -0.25,0; 0.25,0; 0,0.433
 
 # Quadrados:
-# -0.8,-0.8; 0.8,-0.8; 0.8,0.8; -0.8,0.8
+#  -0.25,-0.25; 0.25,-0.25; 0.25,0.25; -0.25,0.25
 # -0.5,-0.5; 0.5,-0.5; 0.5,0.5; -0.5,0.5
 
 # Hexágonos:
@@ -31,82 +31,109 @@ def normalizar_coordenadas(pontos, res_x, res_y):
     return pontos_normalizados
 
 
-def rasterizar_poligono(pontos, res_x, res_y):
+def rasterizar_reta(x1, y1, x2, y2, res_x, res_y):
+    # Inicializa uma matriz vazia com a resolução especificada
     imagem = np.zeros((res_y, res_x))
-    np.set_printoptions(threshold=sys.maxsize, linewidth=sys.maxsize)
 
-    # Itera através de todas as linhas horizontais da imagem (scanlines)
+    # Calcula as diferenças entre as coordenadas x e y dos pontos
+    dx = x2 - x1
+    dy = y2 - y1
+
+    # Verifica se a reta é mais horizontal do que vertical
+    if abs(dx) > abs(dy):
+        if x1 > x2:
+            x1, x2, y1, y2 = x2, x1, y2, y1
+        m = dy / dx
+        b = y1 - m * x1
+        x, y = x1, y1
+
+        # Varre a reta no sentido horizontal
+        while x < x2:
+            if 0 <= x < res_x and 0 <= int(y) < res_y:
+                imagem[int(y), int(x)] = 1
+            x += 1
+            y = m * x + b
+
+    # Caso a reta seja mais vertical do que horizontal
+    else:
+        if y1 > y2:
+            x1, x2, y1, y2 = x2, x1, y2, y1
+        m = dx / dy
+        b = x1 - m * y1
+        x, y = x1, y1
+
+        # Varre a reta no sentido vertical
+        while y < y2:
+            if 0 <= x < res_x and 0 <= int(y) < res_y:
+                imagem[int(y), int(x)] = 1
+            y += 1
+            x = m * y + b
+
+    return imagem
+
+
+def rasteriza_poligno(imagem):
+    res_y, res_x = imagem.shape
+    pontos_internos = []
+    # Iterar sobre cada pixel na imagem
     for y in range(res_y):
-        intersecoes = []
+        is_aresta = False
+        count = 0
+        ponto_aux = []
+        for x in range(res_x):
+            if imagem[y, x] == 1:
+                if y < res_y and (x + 1) < res_x and imagem[y, x + 1] == 1:
+                    is_aresta = True
+                    count = 0
+                else:
+                    if is_aresta:
+                        is_aresta = False
+                    else:
+                        count += 1
 
-        # Itera através das arestas do polígono
-        for i, ponto1 in enumerate(pontos):
-            ponto2 = pontos[i - 1]  # O ponto anterior na lista
+            if 0 < count and count % 2 == 1:
+                ponto_aux.append([y, x])
+        if len(ponto_aux) != 0 and count % 2 == 0:
+            pontos_internos.append(ponto_aux)
 
-            # Verifica se a scanline cruza a aresta
-            if (ponto1[1] <= y < ponto2[1]) or (ponto2[1] <= y < ponto1[1]):
-                # Calcular a coordenada x da interseção
-                x = ((y - ponto1[1]) * (ponto2[0] - ponto1[0]) / (ponto2[1] - ponto1[1])) + ponto1[0]
-                intersecoes.append(x)
+    for ponto in pontos_internos:
+        for p in ponto:
+            imagem[p[0], p[1]] = 1
 
-        # Ordena as interseções pela coordenada x
-        intersecoes.sort()
-
-        # Preenche os pixels entre cada par de interseções
-        for i in range(0, len(intersecoes) - 1, 2):
-            x_start, x_end = int(intersecoes[i]), int(intersecoes[i + 1])
-            imagem[y, x_start:x_end] = 1
-
-    # Mostra o modelo no espaço continuo
-    print(np.array_str(imagem))
     return imagem
 
 
 def adicionar_poligono():
     pontos_str = entrada_pontos.get()
     entrada_pontos.delete(0, END)
-    pontos = [tuple(map(float, ponto.split(','))) for ponto in pontos_str.split(';')]
-    poligonos.append(pontos)
+    poligonos_str = pontos_str.split(';')
+    poligonos.append(poligonos_str)
     texto_poligonos.insert("end", f"{len(poligonos)}. {pontos_str}\n")
-
-
-def blend_rgba(bg, fg):
-    alpha_bg = 1 - fg[:, :, 3]
-    out_alpha = fg[:, :, 3] + bg[:, :, 3] * alpha_bg
-    out_alpha[out_alpha == 0] = 1
-
-    out = np.zeros_like(bg)
-    for i in range(3):
-        out[:, :, i] = (fg[:, :, i] * fg[:, :, 3] + bg[:, :, i] * bg[:, :, 3] * alpha_bg) / out_alpha
-
-    out[:, :, 3] = out_alpha
-    return out
 
 
 def mostrar_poligonos():
     res_x, res_y = map(int, entrada_resolucao.get().split('x'))
-    imagem_final = np.zeros((res_y, res_x, 4))
+    imagem_final = np.zeros((res_y, res_x))
 
-    for pontos in poligonos:
+    for poligono in poligonos:
+        pontos = [tuple(map(float, ponto.split(','))) for ponto in poligono]
         pontos_normalizados = normalizar_coordenadas(pontos, res_x, res_y)
-        imagem_poligono = rasterizar_poligono(pontos_normalizados, res_x, res_y)
+        for i, ponto1 in enumerate(pontos_normalizados):
+            ponto2 = pontos_normalizados[i - 1]  # O ponto anterior na lista
+            imagem_rasterizada_retas = rasterizar_reta(ponto1[0], ponto1[1], ponto2[0], ponto2[1], res_x, res_y)
 
-        cor = np.random.rand(3)  # Gerar cor aleatória
-        transparencia = np.random.uniform(0.3, 4)  # Gerar transparência aleatória
+            imagem_final = np.maximum(imagem_final, imagem_rasterizada_retas)
 
-        # Criar imagem RGBA para o polígono atual
-        imagem_rgba = np.zeros((res_y, res_x, 4))
-        for i in range(3):
-            imagem_rgba[:, :, i] = np.where(imagem_poligono == 1, cor[i], 0)
-        imagem_rgba[:, :, 3] = np.where(imagem_poligono == 1, transparencia, 0)
+        imagem_reasterizada_poligonos = rasteriza_poligno(imagem_final)
+        imagem_final = np.maximum(imagem_final, imagem_reasterizada_poligonos)
 
-        # Combinar imagem_rgba com imagem_final usando blend_rgba
-        imagem_final = blend_rgba(imagem_final, imagem_rgba)
+    print(np.array_str(imagem_final))
 
     plt.title(f'Resolução: {res_x}x{res_y}')
-    plt.imshow(imagem_final, origin='upper')
+    plt.imshow(imagem_final, cmap='gray', origin='lower')
     plt.xticks(range(0, res_x, res_x // 10))
     plt.yticks(range(0, res_y, res_y // 10))
+    plt.grid()
     plt.show()
 
 
