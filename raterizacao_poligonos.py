@@ -46,15 +46,13 @@ def rasterizar_reta(x1, y1, x2, y2, res_x, res_y):
     dy = y2 - y1
 
     m = dy / dx if dx != 0 else 0
+    b = y2 - m * x2 if dx != 0 else 0
 
     # Verifica se a reta é mais horizontal do que vertical
     if abs(dx) > abs(dy):
         if x1 > x2:
             x1, x2, y1, y2 = x2, x1, y2, y1
-
-        b = y1 - m * x1
         x, y = x1, y1
-
         # Varre a reta no sentido horizontal
         while x < x2:
             if 0 <= x < res_x and 0 <= int(y) < res_y:
@@ -66,16 +64,13 @@ def rasterizar_reta(x1, y1, x2, y2, res_x, res_y):
     else:
         if y1 > y2:
             x1, x2, y1, y2 = x2, x1, y2, y1
-
-        b = x1 - m * y1
         x, y = x1, y1
-
         # Varre a reta no sentido vertical
         while y < y2:
             if 0 <= x < res_x and 0 <= int(y) < res_y:
                 imagem[int(y), int(x)] = 1
             y += 1
-            x = m * y + b
+            x = (y - b) / m
 
     return imagem
 
