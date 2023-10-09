@@ -104,6 +104,7 @@ def rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, num_points):
     imagem = np.zeros((res_y, res_x))
     points = []
 
+    # c(t) = (2t^3 - 3t^2 + 1)P1 + (t^3 - 2t^2 + t)T1 + (-2t^3 + 3t^2)P2 + (t^3 - t^2)T2
     for t in range(num_points):
         t_normalized = t / (num_points - 1)
         h1 = 2 * t_normalized ** 3 - 3 * t_normalized ** 2 + 1
@@ -114,6 +115,7 @@ def rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, num_points):
         y = h1 * p1[1] + h2 * p2[1] + h3 * t1[1] + h4 * t2[1]
         points.append((int(x), int(y)))
 
+    # Rasteriza retas
     for i in range(len(points) - 1):
         x1, y1 = points[i]
         x2, y2 = points[i + 1]
