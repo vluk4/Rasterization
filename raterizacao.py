@@ -52,7 +52,7 @@ def rasterizar_reta(x1, y1, x2, y2, res_x, res_y):
             x1, x2, y1, y2 = x2, x1, y2, y1
         x, y = x1, y1
         # Varre a reta no sentido horizontal
-        while x < x2:
+        while x <= x2:
             if 0 <= x < res_x and 0 <= int(y) < res_y:
                 imagem[int(y), int(x)] = 1
             x += 1
@@ -64,7 +64,7 @@ def rasterizar_reta(x1, y1, x2, y2, res_x, res_y):
             x1, x2, y1, y2 = x2, x1, y2, y1
         x, y = x1, y1
         # Varre a reta no sentido vertical
-        while y < y2:
+        while y <= y2:
             if 0 <= x < res_x and 0 <= int(y) < res_y:
                 imagem[int(y), int(x)] = 1
             y += 1
