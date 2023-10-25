@@ -140,36 +140,47 @@ def adicionar_curva_hermite():
 
 
 def mostrar_poligonos():
-    res_x, res_y = map(int, entrada_resolucao.get().split('x'))
-    imagem_final = np.zeros((res_y, res_x))
+    todas_resolucoes = entrada_resolucao.get().split(';')
+    todas_imagens = []
+    for index,resolucao in enumerate(todas_resolucoes):
+        res_x,res_y = map(int,resolucao.split('x'))
+    # res_x, res_y = map(int, entrada_resolucao.get().split('x'))
+        imagem_final = np.zeros((res_y, res_x))
 
-    for poligono in poligonos:
-        poligono_rasterizado = np.zeros((res_y, res_x))
-        pontos = [tuple(map(float, ponto.split(','))) for ponto in poligono]
-        pontos_normalizados = normalizar_coordenadas(pontos, res_x, res_y)
-        for i, ponto1 in enumerate(pontos_normalizados):
-            ponto2 = pontos_normalizados[i - 1]  # O ponto anterior na lista
-            reta_rasterizada = rasterizar_reta(ponto1[0], ponto1[1], ponto2[0], ponto2[1], res_x, res_y)
-            poligono_rasterizado = np.maximum(poligono_rasterizado, reta_rasterizada)
+        for poligono in poligonos:
+            poligono_rasterizado = np.zeros((res_y, res_x))
+            pontos = [tuple(map(float, ponto.split(','))) for ponto in poligono]
+            pontos_normalizados = normalizar_coordenadas(pontos, res_x, res_y)
+            for i, ponto1 in enumerate(pontos_normalizados):
+                ponto2 = pontos_normalizados[i - 1]  # O ponto anterior na lista
+                reta_rasterizada = rasterizar_reta(ponto1[0], ponto1[1], ponto2[0], ponto2[1], res_x, res_y)
+                poligono_rasterizado = np.maximum(poligono_rasterizado, reta_rasterizada)
 
-        imagem_reasterizada_poligonos = rasteriza_poligno(poligono_rasterizado)
-        imagem_final = np.maximum(imagem_final, imagem_reasterizada_poligonos)
+            imagem_reasterizada_poligonos = rasteriza_poligno(poligono_rasterizado)
+            imagem_final = np.maximum(imagem_final, imagem_reasterizada_poligonos)
 
-    for curva_hermite in curvas_hermite:
-        pontos = [tuple(map(float, ponto.split(','))) for ponto in curva_hermite[:-1]]
-        pontos_normalizados = normalizar_coordenadas(pontos, res_x, res_y)
-        p1 = pontos_normalizados[0]
-        p2 = pontos_normalizados[1]
-        t1 = pontos_normalizados[2]
-        t2 = pontos_normalizados[3]
-        pontos_qnt = curva_hermite[-1]
-        curva_hermite_rasterizada = rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, int(pontos_qnt))
-        imagem_final = np.maximum(imagem_final, curva_hermite_rasterizada)
 
-    plt.title(f'Resolução: {res_x}x{res_y}')
-    plt.imshow(imagem_final, cmap='gray', origin='lower')
-    plt.xticks(range(0, res_x, res_x // 10))
-    plt.yticks(range(0, res_y, res_y // 10))
+        for curva_hermite in curvas_hermite:
+            pontos = [tuple(map(float, ponto.split(','))) for ponto in curva_hermite[:-1]]
+            pontos_normalizados = normalizar_coordenadas(pontos, res_x, res_y)
+            p1 = pontos_normalizados[0]
+            p2 = pontos_normalizados[1]
+            t1 = pontos_normalizados[2]
+            t2 = pontos_normalizados[3]
+            pontos_qnt = curva_hermite[-1]
+            curva_hermite_rasterizada = rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, int(pontos_qnt))
+            imagem_final = np.maximum(imagem_final, curva_hermite_rasterizada)
+        todas_imagens.append(imagem_final)
+    plt.figure(figsize=(10,10))
+
+    for index,resolucao in enumerate(todas_resolucoes):
+        # for imageIndex,image in enumerate(todas_imagens):
+        res_x, res_y = map(int, todas_resolucoes[index].split('x'))
+        plt.subplot(2, 2, index+1)
+        plt.imshow(todas_imagens[index],cmap='gray',origin='lower')
+        plt.title(f'Resolução: {res_x}x{res_y}')
+        plt.xticks(range(0, res_x, res_x // 10))
+        plt.yticks(range(0, res_y, res_y // 10))
     plt.show()
 
 
