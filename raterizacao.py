@@ -21,6 +21,9 @@ import numpy as np
 # -0.5, 0.5; -0.2, 0.5; 0, 0.2; 0, -0.2; 5
 # 0.2, -0.2; 0.5, -0.5; 0.2, 0; -0.2, 0; 5
 
+#resoluções
+# 100x100;300x300;800x600;1920x1080
+
 poligonos = []
 curvas_hermite = []
 
@@ -38,14 +41,12 @@ def normalizar_coordenadas(pontos, res_x, res_y):
 def rasterizar_reta(x1, y1, x2, y2, res_x, res_y):
     # Inicializa uma matriz vazia com a resolução especificada
     imagem = np.zeros((res_y, res_x))
-
     # Calcula as diferenças entre as coordenadas x e y dos pontos
     dx = x2 - x1
     dy = y2 - y1
 
     m = dy / dx if dx != 0 else 0
     b = y2 - m * x2 if dx != 0 else 0
-
     # Verifica se a reta é mais horizontal do que vertical
     if abs(dx) > abs(dy):
         if x1 > x2:
@@ -144,7 +145,6 @@ def mostrar_poligonos():
     todas_imagens = []
     for index,resolucao in enumerate(todas_resolucoes):
         res_x,res_y = map(int,resolucao.split('x'))
-    # res_x, res_y = map(int, entrada_resolucao.get().split('x'))
         imagem_final = np.zeros((res_y, res_x))
 
         for poligono in poligonos:
@@ -171,18 +171,33 @@ def mostrar_poligonos():
             curva_hermite_rasterizada = rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, int(pontos_qnt))
             imagem_final = np.maximum(imagem_final, curva_hermite_rasterizada)
         todas_imagens.append(imagem_final)
-    plt.figure(figsize=(10,10))
+    fig = plt.figure(figsize=(15, 10))
+    ax_polygon  =fig.add_subplot(2,3,1)
+    ax_polygon.set_xlim(-1, 1)
+    ax_polygon.set_ylim(-1, 1)
+
+
+    for poligono in poligonos:
+        poligono = [tuple(map(float, ponto.split(','))) for ponto in poligono]
+        x = []
+        y = []
+        for values in poligono:
+            x.append(values[0])
+            y.append(values[1])
+        if len(poligono) > 2: # caso nao seja uma reta , para fechar o poligno
+            x.append(x[0])
+            y.append(y[0])
+        ax_polygon.plot(x,y)
+
 
     for index,resolucao in enumerate(todas_resolucoes):
-        # for imageIndex,image in enumerate(todas_imagens):
         res_x, res_y = map(int, todas_resolucoes[index].split('x'))
-        plt.subplot(2, 2, index+1)
-        plt.imshow(todas_imagens[index],cmap='gray',origin='lower')
-        plt.title(f'Resolução: {res_x}x{res_y}')
-        plt.xticks(range(0, res_x, res_x // 10))
-        plt.yticks(range(0, res_y, res_y // 10))
+        ax = fig.add_subplot(2, 3, index + 2)
+        ax.imshow(todas_imagens[index],cmap='gray',origin='lower')
+        ax.set_title(f'Resolução: {res_x}x{res_y}')
+        ax.set_xticks(range(0, res_x, res_x // 10))
+        ax.set_yticks(range(0, res_y, res_y // 10))
     plt.show()
-
 
 root = Tk()
 root.title("Rasterização")
