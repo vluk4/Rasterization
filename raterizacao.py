@@ -12,14 +12,15 @@ import numpy as np
 # Hexágono:
 # -0.25,0.125; -0.125,0.375; 0.125,0.375; 0.25,0.125; 0.125,-0.125; -0.125,-0.125
 # Retas:
-# -1,0;1,0
-# 0,-1;0,1
-# -1,-1;1,1
-# -1,1;1,-1
-# 0.75,0.5;-0.75,-1
+#-0.75,-0.25;-0.25,0.25
+# -1,0.25;-0.5,0.25
+#  0,0; 0.25
+# -0.30,-1;-0.30,-0.50
+# 0,0;0.25,0.75
 # Curvas
 # -0.5, 0.5; -0.2, 0.5; 0, 0.2; 0, -0.2; 5
 # 0.2, -0.2; 0.5, -0.5; 0.2, 0; -0.2, 0; 5
+# -0.6,0.0 ; 0.6,0 ; 0.5,6 ; 0,0; 100
 
 #resoluções
 # 100x100;300x300;800x600;1920x1080
@@ -32,9 +33,9 @@ def normalizar_coordenadas(pontos, res_x, res_y):
     pontos_normalizados = []
     for ponto in pontos:
         # Transforma a coordenada x e y no intervalo [-1, 1] para o espaço de pixel
-        x = (ponto[0] + 1) / 2 * res_x - 1
-        y = (ponto[1] + 1) / 2 * res_y - 1
-        pontos_normalizados.append((x, y))
+        x = ((ponto[0] + 1)  * (res_x - 1))/2
+        y = ((ponto[1] + 1)  * (res_y - 1))/2
+        pontos_normalizados.append((round(x), round(y)))
     return pontos_normalizados
 
 
@@ -103,9 +104,18 @@ def rasteriza_poligno(imagem):
 
 def rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, num_points):
     imagem = np.zeros((res_y, res_x))
-    points = []
+    points=encontrar_pontos_hermite(p1,p2,t1,t2,num_points)
 
-    # c(t) = (2t^3 - 3t^2 + 1)P1 + (t^3 - 2t^2 + t)T1 + (-2t^3 + 3t^2)P2 + (t^3 - t^2)T2
+
+    for i in range(len(points) - 1):
+        x1, y1 = points[i]
+        x2, y2 = points[i + 1]
+        imagem = np.maximum(imagem, rasterizar_reta(int(x1), int(y1), int(x2), int(y2), res_x, res_y))
+    return imagem
+
+# c(t) = (2t^3 - 3t^2 + 1)P1 + (t^3 - 2t^2 + t)T1 + (-2t^3 + 3t^2)P2 + (t^3 - t^2)T2
+def encontrar_pontos_hermite(p1,p2,t1,t2,num_points):
+    pontos = []
     for t in range(num_points):
         t_normalized = t / (num_points - 1)
         h1 = 2 * t_normalized ** 3 - 3 * t_normalized ** 2 + 1
@@ -114,15 +124,9 @@ def rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, num_points):
         h4 = t_normalized ** 3 - t_normalized ** 2
         x = h1 * p1[0] + h2 * p2[0] + h3 * t1[0] + h4 * t2[0]
         y = h1 * p1[1] + h2 * p2[1] + h3 * t1[1] + h4 * t2[1]
-        points.append((int(x), int(y)))
+        pontos.append((x, y))
 
-    # Rasteriza retas
-    for i in range(len(points) - 1):
-        x1, y1 = points[i]
-        x2, y2 = points[i + 1]
-        imagem = np.maximum(imagem, rasterizar_reta(x1, y1, x2, y2, res_x, res_y))
-    return imagem
-
+    return pontos
 
 def adicionar_poligono():
     pontos_str = entrada_pontos.get()
@@ -176,6 +180,23 @@ def mostrar_poligonos():
     ax_polygon.set_xlim(-1, 1)
     ax_polygon.set_ylim(-1, 1)
 
+    for curva in curvas_hermite:
+        pontos = [tuple(map(float, ponto.split(','))) for ponto in curva[:-1]]
+        p1 = pontos[0]
+        p2 = pontos[1]
+        t1 = pontos[2]
+        t2 = pontos[3]
+        pontos_qnt = curva[-1]
+
+        pontos_hermite =encontrar_pontos_hermite(p1,p2,t1,t2,int(pontos_qnt))
+        x = []
+        y = []
+        for ponto_herm in pontos_hermite:
+            x.append(ponto_herm[0])
+            y.append(ponto_herm[1])
+        ax_polygon.plot(x,y)
+
+
 
     for poligono in poligonos:
         poligono = [tuple(map(float, ponto.split(','))) for ponto in poligono]
@@ -225,7 +246,7 @@ scrollbar = Scrollbar(root, command=texto_pontos.yview)
 scrollbar.grid(row=4, column=3, sticky="ns")
 texto_pontos.config(yscrollcommand=scrollbar.set)
 
-Label(root, text="Resolução (largura x altura):").grid(row=6, column=0, sticky="w")
+Label(root, text="Resolução: largura1xaltura1;largura2xaltura2 ...").grid(row=6, column=0, sticky="w")
 entrada_resolucao = Entry(root, width=30)
 entrada_resolucao.grid(row=6, column=1, sticky=tk.W + tk.E)
 
