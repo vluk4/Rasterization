@@ -1,3 +1,4 @@
+import math
 import sys
 from tkinter import Tk, Label, Entry, Button, Text, Scrollbar, END
 import tkinter as tk
@@ -9,8 +10,10 @@ import numpy as np
 # -0.9, -0.25; -0.5,-0.25; -0.7, 0.25
 # Quadrado:
 # 0.5,0; 0.9,0; 0.9,0.4; 0.5,0.4
+# 0.0, 0.0; 0.2, 0.2; 0.2, 0.2; 0.4, 0.0; 0.4, 0.0; 0.2, -0.2; 0.2, -0.2;0.0, 0.0
 # Hexágono:
 # -0.25,0.125; -0.125,0.375; 0.125,0.375; 0.25,0.125; 0.125,-0.125; -0.125,-0.125
+
 # Retas:
 #-0.75,-0.25;-0.25,0.25
 # -1,0.25;-0.5,0.25
@@ -18,9 +21,11 @@ import numpy as np
 # -0.30,-1;-0.30,-0.50
 # 0,0;0.25,0.75
 # Curvas
-# -0.5, 0.5; -0.2, 0.5; 0, 0.2; 0, -0.2; 5
-# 0.2, -0.2; 0.5, -0.5; 0.2, 0; -0.2, 0; 5
-# -0.6,0.0 ; 0.6,0 ; 0.5,6 ; 0,0; 100
+# -0.5, 0.5; -0.2, 0.5; 0, 2; 0, -0.2; 30
+#  0.2,-0.2; 0.5,-0.5; 0.2,0; 0.5,5 ; 30
+# -0.5, -0.5; -0.5, -0.5; 3, -0.5; -0.5, 7; 30
+# -0.7,0.7;0.4,0.7;0.9,2.8;0.2,2.4;30
+
 
 #resoluções
 # 100x100;300x300;800x600;1920x1080
@@ -33,9 +38,9 @@ def normalizar_coordenadas(pontos, res_x, res_y):
     pontos_normalizados = []
     for ponto in pontos:
         # Transforma a coordenada x e y no intervalo [-1, 1] para o espaço de pixel
-        x = ((ponto[0] + 1)  * (res_x - 1))/2
-        y = ((ponto[1] + 1)  * (res_y - 1))/2
-        pontos_normalizados.append((round(x), round(y)))
+        x = (ponto[0] + 1)/2  * (res_x - 1)
+        y = (ponto[1] + 1) /2 * (res_y - 1)
+        pontos_normalizados.append((x, y))
     return pontos_normalizados
 
 
@@ -106,6 +111,7 @@ def rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, num_points):
     imagem = np.zeros((res_y, res_x))
     points=encontrar_pontos_hermite(p1,p2,t1,t2,num_points)
 
+    points = normalizar_coordenadas(points,res_x,res_y)
 
     for i in range(len(points) - 1):
         x1, y1 = points[i]
@@ -166,11 +172,10 @@ def mostrar_poligonos():
 
         for curva_hermite in curvas_hermite:
             pontos = [tuple(map(float, ponto.split(','))) for ponto in curva_hermite[:-1]]
-            pontos_normalizados = normalizar_coordenadas(pontos, res_x, res_y)
-            p1 = pontos_normalizados[0]
-            p2 = pontos_normalizados[1]
-            t1 = pontos_normalizados[2]
-            t2 = pontos_normalizados[3]
+            p1 = pontos[0]
+            p2 = pontos[1]
+            t1 = pontos[2]
+            t2 = pontos[3]
             pontos_qnt = curva_hermite[-1]
             curva_hermite_rasterizada = rasterizar_curva_hermite(p1, p2, t1, t2, res_x, res_y, int(pontos_qnt))
             imagem_final = np.maximum(imagem_final, curva_hermite_rasterizada)
