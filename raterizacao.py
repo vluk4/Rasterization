@@ -40,8 +40,8 @@ def normalizar_coordenadas(pontos, res_x, res_y):
     pontos_normalizados = []
     for ponto in pontos:
         # Transforma a coordenada x e y no intervalo [-1, 1] para o espaço de pixel
-        x = (ponto[0] + 1) / 2 * (res_x - 1)
-        y = (ponto[1] + 1) / 2 * (res_y - 1)
+        x = (ponto[0] + 1) / 2 * res_x
+        y = (ponto[1] + 1) / 2 * res_y
         pontos_normalizados.append((x, y))
     return pontos_normalizados
 
